@@ -1,0 +1,7 @@
+backup/
+*.csv
+main.py
+evaluation_results.png
+__pycache__/
+*.pyc
+
