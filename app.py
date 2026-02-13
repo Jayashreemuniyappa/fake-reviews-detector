@@ -1,24 +1,29 @@
-# app.py - Simple Fake Review Detector
-
 import streamlit as st
 import joblib
 import re
+import pandas as pd
 
 # Page config
 st.set_page_config(page_title="Fake Review Detector", page_icon="🔍")
-
-# Title
 st.title("🔍 Fake Review Detector")
 st.write("Enter a review to check if it's FAKE or REAL")
 
 # Load model
 @st.cache_resource
 def load_model():
-    return joblib.load('models/fake_review_detector.pkl')
+    try:
+        model = joblib.load('models/fake_review_detector.pkl')
+        return model
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
 
 model = load_model()
 
-# Simple text cleaning
+if model is None:
+    st.stop()
+
+# Simple text cleaning - NO NLTK!
 def clean_text(text):
     text = str(text).lower()
     text = re.sub(r'[^a-zA-Z\s]', '', text)
@@ -43,27 +48,18 @@ if example and not review:
 # Analyze button
 if st.button("🔍 Check Review", type="primary"):
     if review:
-        # Clean and predict
         cleaned = clean_text(review)
         prediction = model.predict([cleaned])[0]
         
-        # Show result
         st.markdown("---")
         st.subheader("📊 Result")
         
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            st.write("**Your review:**")
-            st.info(review)
-        
-        with col2:
-            if prediction == 1:
-                st.error("### 🚨 FAKE REVIEW")
-                st.markdown("⚠️ This appears to be **computer-generated**")
-            else:
-                st.success("### ✅ REAL REVIEW")
-                st.markdown("👍 This appears to be **human-written**")
+        if prediction == 1:
+            st.error("### 🚨 FAKE REVIEW")
+            st.markdown("⚠️ This appears to be **computer-generated**")
+        else:
+            st.success("### ✅ REAL REVIEW")
+            st.markdown("👍 This appears to be **human-written**")
         
         # Show confidence
         try:
@@ -75,7 +71,3 @@ if st.button("🔍 Check Review", type="primary"):
             pass
     else:
         st.warning("Please enter a review")
-
-# Footer
-st.markdown("---")
-st.caption("Made with ❤️ | Accuracy: 100% on test data")
